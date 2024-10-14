@@ -1,19 +1,20 @@
-import { join } from 'path';
 import { pipeline } from 'stream/promises';
+import { join, isAbsolute, sep } from 'path';
 import { access, constants, stat, rm } from 'fs/promises';
 import { createReadStream, createWriteStream } from 'fs';
 
 export const moveFile = async (workingDir, line) => {
 
-  const args = line.split(' ').slice(1);
+  const args = line.split(' ').filter((item) => item !== '').slice(1);
 
   if (!args || args.length < 2) {
     throw new Error('Invalid input');
   }
 
-  const pathFile = join(workingDir, args[0]);
-  const pathDir = join(workingDir, args[1]);
-  const pathNewFile = join(pathDir, args[0]);
+  const pathFile = isAbsolute(args[0]) ? args[0] : join(workingDir, args[0]);
+  const pathDir = isAbsolute(args[1]) ? args[1] : join(workingDir, args[1]);
+  const fileName = pathFile.split(sep).slice(-1).join('');
+  const pathNewFile = join(pathDir, fileName);
 
   try {
     await access(pathDir, constants.F_OK).catch(() => { throw new Error('Operation failed') });
@@ -24,15 +25,23 @@ export const moveFile = async (workingDir, line) => {
     if (!file.isFile()) throw new Error('Operation failed');
     if (!dir.isDirectory()) throw new Error('Operation failed');
 
-    const oldFile = createReadStream(pathFile);
-    const copyFile = createWriteStream(pathNewFile);
+    try {
+      await access(pathNewFile, constants.F_OK);
+      throw new Error('Operation failed\nThe file already exists in this directory');
+    } catch(err) {
+      if (err.code === 'ENOENT') {
+        const oldFile = createReadStream(pathFile);
+        const copyFile = createWriteStream(pathNewFile);
 
-    await pipeline(oldFile, copyFile);
+        await pipeline(oldFile, copyFile);
 
-    await rm(pathFile);
+        await rm(pathFile);
 
-    console.log('File moved');
-
+        console.log('File moved');
+      } else {
+        console.error(err.message);
+      }
+    }
   } catch(err) {
     console.error(err.message);
   }

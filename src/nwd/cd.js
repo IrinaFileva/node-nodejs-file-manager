@@ -1,8 +1,8 @@
 import { access, stat, constants } from 'fs/promises';
-import { join, sep, isAbsolute, resolve } from 'path';
+import { sep, isAbsolute, resolve } from 'path';
 
 export const cd = async ( workingDir, line ) => {
-  const dir = line.split(' ')[1];
+  const dir = line.split(' ').filter((item) => item !== '')[1];
 
   if (!dir || dir.length < 1) {
     throw new Error('Invalid input');
@@ -11,9 +11,9 @@ export const cd = async ( workingDir, line ) => {
   let newPath;
 
   if (isAbsolute(dir)) {
-    newPath = resolve(workingDir, dir);
+    newPath = dir;
   } else {
-    newPath = join(workingDir, `${sep}${dir}`);
+    newPath = resolve(workingDir, `${sep}${dir}`);
   }
 
   await access(newPath, constants.F_OK).catch(() => { throw new Error('Operation failed') });

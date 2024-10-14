@@ -4,7 +4,7 @@ import { access, constants } from 'fs/promises';
 
 export const createFile = async( workingDir, line ) => {
 
-  const fileName = line.split(' ')[1].replace(`${sep}`, '');
+  const fileName = line.split(' ').filter((item) => item !== '')[1].replace(`${sep}`, '');
 
   if (!fileName || fileName.length < 1) {
     throw new Error('Invalid input');

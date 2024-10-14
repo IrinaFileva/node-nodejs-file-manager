@@ -1,14 +1,14 @@
 import { rm } from 'fs/promises';
-import { join, sep } from 'path';
+import { join, isAbsolute } from 'path';
 import { access, constants, stat } from 'fs/promises';
 
 export const deleteFile = async (workingDir, line) => {
 
-  const fileName = line.split(' ')[1].replace(`${sep}`, '');
+  const fileName = line.split(' ').filter((item) => item !== '')[1];
 
   if (!fileName || fileName.length < 1) throw new Error('Invalid input');
 
-  const pathFile = join(workingDir, fileName);
+  const pathFile = isAbsolute(fileName) ? fileName : join(workingDir, fileName);
 
   try {
     await access(pathFile, constants.F_OK).catch(() => { throw new Error('Operation failed') });
